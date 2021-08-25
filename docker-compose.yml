@@ -1,0 +1,20 @@
+version: '3'
+
+
+
+services:
+  bd:
+    build: ./bd
+    restart: always
+    ports:
+      - '5432:5432'
+    env_file:
+          - .env
+    volumes:
+      - ./data:/var/lib/postgresql/data
+  app:
+    build: ipKekBot
+  backend:
+    build: backend
+    ports:
+      - '8080:8080'
