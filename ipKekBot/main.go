@@ -5,44 +5,12 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"ipKekBot/connectDB"
+	"ipKekBot/users"
 	"net/http"
 	"time"
-)
-
-var numericKeyboard = tg.NewInlineKeyboardMarkup(
-	tg.NewInlineKeyboardRow(
-		tg.NewInlineKeyboardButtonURL("1.com", "http://x.com"),
-		tg.NewInlineKeyboardButtonData("hi", "/start"),
-		tg.NewInlineKeyboardButtonData("3", "3"),
-	),
-	tg.NewInlineKeyboardRow(
-		tg.NewInlineKeyboardButtonData("4", "4"),
-		tg.NewInlineKeyboardButtonData("5", "5"),
-		tg.NewInlineKeyboardButtonData("6", "6"),
-	),
-	tg.NewInlineKeyboardRow(
-		tg.NewInlineKeyboardButtonSwitch("10", "10"),
-	),
-)
-
-var myBtn = tg.NewReplyKeyboard(
-	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButton("/start"),
-		tg.NewKeyboardButton("2"),
-		tg.NewKeyboardButton("3"),
-	),
-	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButton("4"),
-		tg.NewKeyboardButton("5"),
-		tg.NewKeyboardButton("6"),
-	),
-	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButtonContact("7"),
-		tg.NewKeyboardButtonLocation("8"),
-		tg.NewKeyboardButtonContact("9"),
-	),
 )
 
 type UserHistory struct {
@@ -70,62 +38,124 @@ func Init() (*tg.BotAPI, tg.UpdatesChannel) {
 
 func main() {
 	db := connectDB.Connect()
-	db.DB() // depr
+	db.DB()
 	bot, updates := Init()
-
-	// test service
-	ipApi := "http://ip-api.com/json/"
-	kek, _ := http.Get(ipApi + "195.133.239.83")
-	b, _ := ioutil.ReadAll(kek.Body)
-	defer kek.Body.Close()
-	var d connectDB.Ips
-	if errJ := json.Unmarshal(b, &d); errJ != nil {
-		log.Fatal(errJ)
-	}
-	res := db.Create(&d) //res :=
-	//tst:= db.First(&d)
-
-	fmt.Println("====", res)
-	//db.Create(&UserHistory{, 3})
-	fmt.Println(d)
-
 	for {
 		select {
 		case update := <-updates:
 			if update.Message == nil {
 				continue
 			}
+			user := &users.Users{Id: update.Message.From.ID}
+			prevMsg := db.First(user, "id = ?", user.Id)
+			if prevMsg.Error != nil {
+				db.Create(user)
+			}
+			fmt.Println(prevMsg)
 			var reply string
 			var msg tg.MessageConfig
-			switch update.Message.Text {
-			case "/start":
-				{
-					reply = fmt.Sprintf(`Привет @%s! Я тут слежу за порядком. Веди себя хорошо.`,
-						update.Message.From.UserName)
-					msg = tg.NewMessage(update.Message.Chat.ID, reply)
-					msg.ReplyMarkup = myBtn
-					msg.ReplyToMessageID = update.Message.MessageID
-				}
-			case "/checkIp":
-				{
+			if update.Message.IsCommand() {
+				switch update.Message.Text {
+				case "/start":
+					{
+						reply = fmt.Sprintf("Yo @%s! I'm ipKekbot.\n"+
+							"I can help you get information about the ip and store it in the database.\n\n"+
+							"You can control me by sending these commands:\n\n"+
+							"/checkip - get information about the ip\n"+
+							"/historycheck - get history checks",
+							update.Message.From.UserName)
+						msg = tg.NewMessage(update.Message.Chat.ID, reply)
+						if user.Adm == true {
+							msg.ReplyMarkup = users.CreatorBtn
+						} else {
+							msg.ReplyMarkup = users.UserBtn
+						}
+						msg.ReplyToMessageID = update.Message.MessageID
+					}
+				case "/checkip":
+					{
+						reply = "Enter the ip address.\nExample: 213.180.193.1"
+						msg = tg.NewMessage(update.Message.Chat.ID, reply)
+						msg.ReplyMarkup = users.CreatorBtn
+						msg.ReplyToMessageID = update.Message.MessageID
+						tst := db.Find(&users.Users{Id: update.Message.From.ID}).Update("prev_msg", update.Message.Text)
+						fmt.Println(tst)
+					}
+				default:
 
 				}
-			default:
+			} else {
 
+				switch user.PrevMsg {
+				case "/checkip":
+					msg = handleCheckIp(db, update.Message, &update.Message.Text)
+					if user.Adm {
+						msg.ReplyMarkup = users.CreatorBtn
+					} else {
+						msg.ReplyMarkup = users.UserBtn
+					}
+					user.PrevMsg = ""
+					db.Save(user)
+				}
 			}
-			UserName := update.Message.From.UserName
-			ChatID := update.Message.Chat.ID
-			Text := update.Message.Text
-			log.Printf("[%s] %d %s", UserName, ChatID, Text)
-			reply = fmt.Sprintf(`@%s, ну что!?! Веди себя хорошо.`,
-				update.Message.From.UserName)
 
-			msg = tg.NewMessage(ChatID, reply)
-			msg.ReplyToMessageID = update.Message.MessageID
-			msg.ReplyMarkup = numericKeyboard
-			fmt.Println(msg.ChannelUsername)
-
-			bot.Send(msg)
+			mess, err := bot.Send(msg)
+			if err != nil {
+				log.Fatal(err, mess)
+			}
 		}
 	}
+}
+
+func handleCheckIp(db *gorm.DB, message *tg.Message, query *string) tg.MessageConfig {
+	var msg tg.MessageConfig
+	var reply string
+	d := &connectDB.Ips{Query: *query}
+	res := db.First(d, "query = ?", *query)
+	if res.Error != nil || d.Query != *query {
+		kek, err := http.Get("http://ip-api.com/json/" + *query)
+		if err != nil {
+			log.Fatal(err)
+		}
+		b, err := ioutil.ReadAll(kek.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer kek.Body.Close()
+		if errJ := json.Unmarshal(b, &d); errJ != nil {
+			log.Fatal(errJ)
+		}
+		d.ID = 0
+		res = db.Create(&d)
+		if res.Error != nil {
+			log.Fatal(res.Error)
+		}
+		if d.Status == "success" {
+			reply = generateRespMsgText(d)
+		} else {
+			reply = fmt.Sprintf("Bad request!\nQuery Ip: %s", d.Query)
+		}
+	} else {
+		reply = generateRespMsgText(d)
+	}
+	msg = tg.NewMessage(int64(message.From.ID), reply)
+	msg.ReplyToMessageID = message.MessageID
+	return msg
+}
+
+func generateRespMsgText(d *connectDB.Ips) string {
+	return fmt.Sprintf(`Query Ip: %s
+Region: %s
+RegionName: %s
+countryCode: %s
+Country: %s
+City: %s
+Zip: %s
+Lat: %f
+Lon: %f
+Timezone: %s
+Isp: %s
+Org: %s
+As: %s`, d.Query, d.Region, d.RegionName, d.CountryCode, d.Country,
+		d.City, d.Zip, d.Lat, d.Lon, d.Timezone, d.Isp, d.Org, d.As)
 }

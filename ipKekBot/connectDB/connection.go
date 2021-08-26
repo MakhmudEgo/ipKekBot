@@ -4,10 +4,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"ipKekBot/users"
 )
 
 type Ips struct {
-	ID          int
+	ID          uint    `gorm:"autoIncrement"`
 	Query       string  `gorm:"column:query"`
 	Status      string  `gorm:"column:status"`
 	Country     string  `gorm:"column:country"`
@@ -24,11 +25,6 @@ type Ips struct {
 	As          string  `gorm:"column:as"`
 }
 
-type Users struct {
-	Id  uint
-	Adm bool
-}
-
 func Connect() *gorm.DB {
 	configDB := "host=192.168.235.110 " +
 		"user=postgres " +
@@ -41,7 +37,7 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Panic("no connect")
 	}
-	admin := &Users{Id: 234899515, Adm: true}
+	admin := &users.Users{Id: 234899515, Adm: true}
 	if err := db.First(&admin); err.Error != nil {
 		result := db.Create(&admin)
 		if result.Error != nil {
