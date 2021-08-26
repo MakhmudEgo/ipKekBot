@@ -6,26 +6,10 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
+	"ipKekBot/connectDB"
 	"net/http"
 	"time"
 )
-
-type Data struct {
-	Query       string  `json:"query"`
-	Status      string  `json:"status"`
-	Country     string  `json:"country"`
-	CountryCode string  `json:"countryCode"`
-	Region      string  `json:"region"`
-	RegionName  string  `json:"regionName"`
-	City        string  `json:"city"`
-	Zip         string  `json:"zip"`
-	Lat         float64 `json:"lat"`
-	Lon         float64 `json:"lon"`
-	Timezone    string  `json:"timezone"`
-	Isp         string  `json:"isp"`
-	Org         string  `json:"org"`
-	As          string  `json:"as"`
-}
 
 var numericKeyboard = tg.NewInlineKeyboardMarkup(
 	tg.NewInlineKeyboardRow(
@@ -42,7 +26,6 @@ var numericKeyboard = tg.NewInlineKeyboardMarkup(
 		tg.NewInlineKeyboardButtonSwitch("10", "10"),
 	),
 )
-
 
 var myBtn = tg.NewReplyKeyboard(
 	tg.NewKeyboardButtonRow(
@@ -62,69 +45,82 @@ var myBtn = tg.NewReplyKeyboard(
 	),
 )
 
-func main() {
-	token := "1971227789:AAEwskoVtcc3ap4qlXYMyqX0Jx3BJLv0G7g"
+type UserHistory struct {
+	IpsId  uint `gorm:"column:ips_id"`
+	UserId uint `gorm:"column:user_id"`
+}
+
+func Init() (*tg.BotAPI, tg.UpdatesChannel) {
+	token := "1971227789:AAEwskoVtcc3ap4qlXYMyqX0Jx3BJLv0G7g" // BAD PRACTICES
+
 	bot, err := tg.NewBotAPI(token)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
-	ipApi := "http://ip-api.com/json/"
-	kek, _ := http.Get(ipApi + "xxxx")
-
-	b, err := ioutil.ReadAll(kek.Body)
-	var d Data
-
-	if errJ := json.Unmarshal(b, &d); errJ != nil {
-		log.Fatal(errJ)
-	}
-	fmt.Println(d)
 	bot.Debug = true
-
-
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	u := tg.NewUpdate(0)
 	u.Timeout = int(time.Hour)
-
-	//msg := tg.NewMessage(234899515, "go go go")
-	//bot.Send(msg)
-
 	updates, err := bot.GetUpdatesChan(u)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return bot, updates
+}
+
+func main() {
+	db := connectDB.Connect()
+	db.DB() // depr
+	bot, updates := Init()
+
+	// test service
+	ipApi := "http://ip-api.com/json/"
+	kek, _ := http.Get(ipApi + "195.133.239.83")
+	b, _ := ioutil.ReadAll(kek.Body)
+	defer kek.Body.Close()
+	var d connectDB.Ips
+	if errJ := json.Unmarshal(b, &d); errJ != nil {
+		log.Fatal(errJ)
+	}
+	res := db.Create(&d) //res :=
+	//tst:= db.First(&d)
+
+	fmt.Println("====", res)
+	//db.Create(&UserHistory{, 3})
+	fmt.Println(d)
+
 	for {
 		select {
 		case update := <-updates:
 			if update.Message == nil {
-				if update.ChannelPost != nil {
-
-					resp, _ := bot.SetChatTitle(tg.SetChatTitleConfig{Title: "helloD world!", ChatID: update.ChannelPost.Chat.ID})
-					bot.SetChatDescription(tg.SetChatDescriptionConfig{ChatID: update.ChannelPost.Chat.ID, Description: "kek lol"})
-					admins, _ := bot.GetChatAdministrators(tg.ChatConfig{ChatID: update.ChannelPost.Chat.ID})
-					fmt.Println(admins)
-
-					fmt.Println("reeeeeeeesp", resp)
-				}
 				continue
 			}
-			if update.Message.IsCommand() && update.Message.Text == "/start" {
-				reply := fmt.Sprintf(`Привет @%s! Я тут слежу за порядком. Веди себя хорошо.`,
-					update.Message.From.UserName)
-				msg := tg.NewMessage(update.Message.Chat.ID, reply)
+			var reply string
+			var msg tg.MessageConfig
+			switch update.Message.Text {
+			case "/start":
+				{
+					reply = fmt.Sprintf(`Привет @%s! Я тут слежу за порядком. Веди себя хорошо.`,
+						update.Message.From.UserName)
+					msg = tg.NewMessage(update.Message.Chat.ID, reply)
+					msg.ReplyMarkup = myBtn
+					msg.ReplyToMessageID = update.Message.MessageID
+				}
+			case "/checkIp":
+				{
 
-				msg.ReplyMarkup = 	myBtn
+				}
+			default:
 
-				msg.ReplyToMessageID = update.Message.MessageID
-				bot.Send(msg)
-
-				continue
 			}
 			UserName := update.Message.From.UserName
 			ChatID := update.Message.Chat.ID
 			Text := update.Message.Text
 			log.Printf("[%s] %d %s", UserName, ChatID, Text)
-			var reply string
 			reply = fmt.Sprintf(`@%s, ну что!?! Веди себя хорошо.`,
-					update.Message.From.UserName)
+				update.Message.From.UserName)
 
-			msg := tg.NewMessage(ChatID, reply)
+			msg = tg.NewMessage(ChatID, reply)
 			msg.ReplyToMessageID = update.Message.MessageID
 			msg.ReplyMarkup = numericKeyboard
 			fmt.Println(msg.ChannelUsername)
