@@ -38,7 +38,6 @@ func Init() (*tg.BotAPI, tg.UpdatesChannel) {
 
 func main() {
 	db := connectDB.Connect()
-	db.DB()
 	bot, updates := Init()
 	for {
 		select {
@@ -88,7 +87,7 @@ func main() {
 
 				switch user.PrevMsg {
 				case "/checkip":
-					msg = handleCheckIp(db, update.Message, &update.Message.Text)
+					msg = handleCheckIp(db, update.Message)
 					if user.Adm {
 						msg.ReplyMarkup = users.CreatorBtn
 					} else {
@@ -107,13 +106,13 @@ func main() {
 	}
 }
 
-func handleCheckIp(db *gorm.DB, message *tg.Message, query *string) tg.MessageConfig {
+func handleCheckIp(db *gorm.DB, message *tg.Message) tg.MessageConfig {
 	var msg tg.MessageConfig
 	var reply string
-	d := &connectDB.Ips{Query: *query}
-	res := db.First(d, "query = ?", *query)
-	if res.Error != nil || d.Query != *query {
-		kek, err := http.Get("http://ip-api.com/json/" + *query)
+	d := &connectDB.Ips{Query: message.Text}
+	res := db.First(d, "query = ?", message.Text)
+	if res.Error != nil || d.Query != message.Text {
+		kek, err := http.Get("http://ip-api.com/json/" + message.Text)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -125,25 +124,23 @@ func handleCheckIp(db *gorm.DB, message *tg.Message, query *string) tg.MessageCo
 		if errJ := json.Unmarshal(b, &d); errJ != nil {
 			log.Fatal(errJ)
 		}
-		d.ID = 0
 		res = db.Create(&d)
 		if res.Error != nil {
 			log.Fatal(res.Error)
 		}
-		if d.Status == "success" {
-			reply = generateRespMsgText(d)
-		} else {
-			reply = fmt.Sprintf("Bad request!\nQuery Ip: %s", d.Query)
-		}
+		reply = generateRespCheckIp(d)
 	} else {
-		reply = generateRespMsgText(d)
+		reply = generateRespCheckIp(d)
 	}
 	msg = tg.NewMessage(int64(message.From.ID), reply)
 	msg.ReplyToMessageID = message.MessageID
 	return msg
 }
 
-func generateRespMsgText(d *connectDB.Ips) string {
+func generateRespCheckIp(d *connectDB.Ips) string {
+	if d.Status == "fail" {
+		return fmt.Sprintf("Bad request!\nQuery Ip: %s", d.Query)
+	}
 	return fmt.Sprintf(`Query Ip: %s
 Region: %s
 RegionName: %s

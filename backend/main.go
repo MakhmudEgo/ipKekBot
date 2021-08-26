@@ -26,7 +26,7 @@ func main() {
 		fmt.Fprintf(w, "%#v", r.URL.Query())
 	})
 	//Init()
-	dsn := "host=192.168.235.110 users=postgres password=lol dbname=postgres port=5432 sslmode=disable"
+	dsn := "host=192.168.235.110 user=postgres password=lol dbname=postgres port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Panic("no connect")
