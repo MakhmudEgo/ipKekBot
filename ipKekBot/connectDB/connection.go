@@ -37,7 +37,7 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Panic("no connect")
 	}
-	admin := &users.Users{Id: 234899515, Adm: true}
+	admin := &users.Users{Id: 234899515, Role: users.CreatorR}
 	if err := db.First(&admin); err.Error != nil {
 		result := db.Create(&admin)
 		if result.Error != nil {
