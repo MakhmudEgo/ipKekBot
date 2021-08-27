@@ -12,3 +12,15 @@
 
 ## telegram commands
 
+/check_ip
+/history_check
+
+| Creator  | Admin  | User  | Command  |
+| ------------ | ------------ | ------------ | ------------ |
+| +  |  + | +  | /check_ip  |
+|  + |   +| +  |  /history_check |
+|  + |  + |   |  /send_message |
+|  + |  + |   |  /add_new_admin |
+|  + |   |   |  /delete_admin |
+|  + |  + |   |  /get_history_by_tg |
+
