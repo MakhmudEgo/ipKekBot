@@ -38,28 +38,45 @@ func Check(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg.M
 			return msg
 		}
 		msg = sendMessage_(db, upd)
-		//::TODO duplicate addnewadmin, deleteadmin
+		//::TODO duplicate addnewadmin, deleteadmin, getlistchecksipuser
 	case "/addnewadmin":
-		if user.Role == users.UserR {
-			msg = tg.NewMessage(int64(user.Id), "permission denied")
-			msg.ReplyToMessageID = upd.MessageID
-			return msg
-		}
-		msg = tg.NewMessage(upd.Chat.ID, "enter the username")
-		res := db.Find(&users.Users{Id: upd.From.ID}).Update("prev_msg", upd.Text)
-		if res.Error != nil {
-			log.Fatal(res.Error.Error())
+		{
+			if user.Role == users.UserR {
+				msg = tg.NewMessage(int64(user.Id), "permission denied")
+				msg.ReplyToMessageID = upd.MessageID
+				return msg
+			}
+			msg = tg.NewMessage(upd.Chat.ID, "enter the username")
+			res := db.Find(&users.Users{Id: upd.From.ID}).Update("prev_msg", upd.Text)
+			if res.Error != nil {
+				log.Fatal(res.Error.Error())
+			}
 		}
 	case "/deleteadmin":
-		if user.Role != users.CreatorR {
-			msg = tg.NewMessage(int64(user.Id), "permission denied")
-			msg.ReplyToMessageID = upd.MessageID
-			return msg
+		{
+			if user.Role != users.CreatorR {
+				msg = tg.NewMessage(int64(user.Id), "permission denied")
+				msg.ReplyToMessageID = upd.MessageID
+				return msg
+			}
+			msg = tg.NewMessage(upd.Chat.ID, "enter the username")
+			res := db.Find(&users.Users{Id: upd.From.ID}).Update("prev_msg", upd.Text)
+			if res.Error != nil {
+				log.Fatal(res.Error.Error())
+			}
 		}
-		msg = tg.NewMessage(upd.Chat.ID, "enter the username")
-		res := db.Find(&users.Users{Id: upd.From.ID}).Update("prev_msg", upd.Text)
-		if res.Error != nil {
-			log.Fatal(res.Error.Error())
+	case "/getlistchecksipuser":
+		{
+			if user.Role == users.UserR {
+				msg = tg.NewMessage(int64(user.Id), "permission denied")
+				msg.ReplyToMessageID = upd.MessageID
+				return msg
+			}
+			msg = tg.NewMessage(upd.Chat.ID, "enter the username")
+			res := db.Find(&users.Users{Id: upd.From.ID}).Update("prev_msg", upd.Text)
+			if res.Error != nil {
+				log.Fatal(res.Error.Error())
+			}
 		}
 	default:
 		msg = unknown_(upd)
@@ -94,11 +111,11 @@ func historyCheck_(db *gorm.DB, upd *tg.Message, user *users.Users) []tg.Message
 	for idx, item := range hist {
 		kek := myd[(item.IpsId)]
 		reply := fmt.Sprintf("%d. %s\n\n%s",
-			idx, item.Time.Format("Mon, 2 Jan 2006 15:04:05 MST"),
+			idx+1, item.Time.Format("Mon, 2 Jan 2006 15:04:05 MST"),
 			Handler.GenerateRespCheckIp(&kek))
 		msg := tg.NewMessage(int64(upd.From.ID), reply)
 		msg.ReplyMarkup = users.CheckRole(user.Role)
-		msg.ReplyToMessageID = upd.MessageID
+		//msg.ReplyToMessageID = upd.MessageID
 		msgs = append(msgs, msg)
 
 		fmt.Println(reply)

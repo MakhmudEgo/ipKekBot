@@ -34,11 +34,49 @@ func Execute(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg
 		msg = deleteAdmin(db, upd)
 		user.PrevMsg = ""
 		db.Save(user)
+	case "/getlistchecksipuser":
+		getListChecksIpUser(db, upd, bot)
+		user.PrevMsg = ""
+		db.Save(user)
+		return tg.NewMessage(-1, "")
 	default:
 		msg = otherMsg(user.Role, upd)
 	}
 	msg.ReplyToMessageID = upd.MessageID
 	return msg
+}
+
+func getListChecksIpUser(db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) {
+	var data []users.UserHistory
+	user := &users.Users{Username: upd.Text}
+
+	res := db.Where("username = ?", upd.Text).Find(&user)
+	if res.Error != nil || user.Id == 0 {
+		msg := tg.NewMessage(int64(upd.From.ID), "Not found "+upd.Text)
+		msg.ReplyToMessageID = upd.MessageID
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		return
+	}
+	res = db.Where("user_id = ?", user.Id).Find(&data)
+	if res.Error != nil {
+		_, err := bot.Send(tg.NewMessage(int64(upd.From.ID), "empty history"))
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}
+
+	for idx, item := range data {
+		reply := fmt.Sprintf("%d. %s", idx+1, item.Query)
+		msg := tg.NewMessage(int64(upd.From.ID), reply)
+		//msg.ReplyToMessageID = upd.MessageID
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}
 }
 
 func deleteAdmin(db *gorm.DB, upd *tg.Message) tg.MessageConfig {
@@ -112,7 +150,7 @@ func respCheckIp(db *gorm.DB, message *tg.Message) tg.MessageConfig {
 	}
 	msg = tg.NewMessage(int64(message.From.ID), reply)
 
-	tx := db.Create(&users.UserHistory{IpsId: d.ID, UserId: message.From.ID, Time: time.Now()})
+	tx := db.Create(&users.UserHistory{IpsId: d.ID, UserId: message.From.ID, Time: time.Now(), Query: message.Text})
 	if tx.Error != nil {
 		log.Fatal(tx.Error.Error())
 	}

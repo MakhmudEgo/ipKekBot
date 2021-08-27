@@ -15,6 +15,7 @@ const (
 type UserHistory struct {
 	IpsId  uint `gorm:"column:ips_id"`
 	Time   time.Time
+	Query  string
 	UserId int `gorm:"column:user_id"`
 }
 
