@@ -16,9 +16,9 @@ func Check(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg.M
 	switch upd.Text {
 	case "/start":
 		msg = start_(user, upd)
-	case "/checkip":
+	case "/check_ip":
 		msg = checkIp_(db, upd)
-	case "/historycheck":
+	case "/history_check":
 		{
 			msgs := historyCheck_(db, upd, user)
 			for _, config := range msgs {
@@ -31,7 +31,7 @@ func Check(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg.M
 			db.Save(user)
 		}
 		return tg.NewMessage(-1, "")
-	case "/sendmessage":
+	case "/send_message":
 		if user.Role == users.UserR {
 			msg = tg.NewMessage(int64(user.Id), "permission denied")
 			msg.ReplyToMessageID = upd.MessageID
@@ -39,7 +39,7 @@ func Check(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg.M
 		}
 		msg = sendMessage_(db, upd)
 		//::TODO duplicate addnewadmin, deleteadmin, getlistchecksipuser
-	case "/addnewadmin":
+	case "/add_new_admin":
 		{
 			if user.Role == users.UserR {
 				msg = tg.NewMessage(int64(user.Id), "permission denied")
@@ -52,7 +52,7 @@ func Check(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg.M
 				log.Fatal(res.Error.Error())
 			}
 		}
-	case "/deleteadmin":
+	case "/delete_admin":
 		{
 			if user.Role != users.CreatorR {
 				msg = tg.NewMessage(int64(user.Id), "permission denied")
@@ -65,14 +65,14 @@ func Check(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg.M
 				log.Fatal(res.Error.Error())
 			}
 		}
-	case "/getlistchecksipuser":
+	case "/get_history_by_tg":
 		{
 			if user.Role == users.UserR {
 				msg = tg.NewMessage(int64(user.Id), "permission denied")
 				msg.ReplyToMessageID = upd.MessageID
 				return msg
 			}
-			msg = tg.NewMessage(upd.Chat.ID, "enter the username")
+			msg = tg.NewMessage(upd.Chat.ID, "enter the ID")
 			res := db.Find(&users.Users{Id: upd.From.ID}).Update("prev_msg", upd.Text)
 			if res.Error != nil {
 				log.Fatal(res.Error.Error())
@@ -128,8 +128,8 @@ func start_(user *users.Users, upd *tg.Message) tg.MessageConfig {
 	reply := fmt.Sprintf("Yo @%s! I'm ipKekbot.\n"+
 		"I can help you get information about the ip and store it in the database.\n\n"+
 		"You can control me by sending these commands:\n\n"+
-		"/checkip - get information about the ip\n"+
-		"/historycheck - get history checks",
+		"/check_ip - get information about the ip\n"+
+		"/history_check - get history checks",
 		upd.From.UserName)
 	msg := tg.NewMessage(upd.Chat.ID, reply)
 	msg.ReplyMarkup = users.CheckRole(user.Role)

@@ -26,7 +26,7 @@ type Ips struct {
 }
 
 func Connect() *gorm.DB {
-	configDB := "host=192.168.20.44 " +
+	configDB := "host=127.0.0.1 " +
 		"user=postgres " +
 		"password=lol " +
 		"dbname=postgres " +

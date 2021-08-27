@@ -10,6 +10,7 @@ import (
 	"ipKekBot/connectDB"
 	"ipKekBot/users"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -17,24 +18,24 @@ func Execute(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg
 	var msg tg.MessageConfig
 
 	switch user.PrevMsg {
-	case "/checkip":
+	case "/check_ip":
 		msg = respCheckIp(db, upd)
 		user.PrevMsg = ""
 		db.Save(user)
-	case "/sendmessage":
+	case "/send_message":
 		sendmessage(db, upd, bot)
 		user.PrevMsg = ""
 		db.Save(user)
 		return tg.NewMessage(-1, "")
-	case "/addnewadmin":
+	case "/add_new_admin":
 		msg = addNewAdmin(db, upd)
 		user.PrevMsg = ""
 		db.Save(user)
-	case "/deleteadmin":
+	case "/delete_admin":
 		msg = deleteAdmin(db, upd)
 		user.PrevMsg = ""
 		db.Save(user)
-	case "/getlistchecksipuser":
+	case "/get_history_by_tg":
 		getListChecksIpUser(db, upd, bot)
 		user.PrevMsg = ""
 		db.Save(user)
@@ -48,9 +49,13 @@ func Execute(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg
 
 func getListChecksIpUser(db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) {
 	var data []users.UserHistory
-	user := &users.Users{Username: upd.Text}
+	id, err := strconv.Atoi(upd.Text)
+	if err != nil {
+		log.Fatal("atoi: " + err.Error())
+	}
+	user := &users.Users{Id: id}
 
-	res := db.Where("username = ?", upd.Text).Find(&user)
+	res := db.Where("id = ?", upd.Text).Find(&user)
 	if res.Error != nil || user.Id == 0 {
 		msg := tg.NewMessage(int64(upd.From.ID), "Not found "+upd.Text)
 		msg.ReplyToMessageID = upd.MessageID

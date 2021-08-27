@@ -28,8 +28,8 @@ type Users struct {
 
 var UserBtn = tg.NewReplyKeyboard(
 	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButton("/checkip"),
-		tg.NewKeyboardButton("/historycheck"),
+		tg.NewKeyboardButton("/check_ip"),
+		tg.NewKeyboardButton("/history_check"),
 	),
 	tg.NewKeyboardButtonRow(
 		tg.NewKeyboardButton("test"),
@@ -41,15 +41,15 @@ var UserBtn = tg.NewReplyKeyboard(
 
 var AdminBtn = tg.NewReplyKeyboard(
 	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButton("/checkip"),
-		tg.NewKeyboardButton("/historycheck"),
+		tg.NewKeyboardButton("/check_ip"),
+		tg.NewKeyboardButton("/history_check"),
 	),
 	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButton("/sendmessage"),
-		tg.NewKeyboardButton("/addnewadmin"),
+		tg.NewKeyboardButton("/send_message"),
+		tg.NewKeyboardButton("/add_new_admin"),
 	),
 	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButton("/getlistchecksipuser"),
+		tg.NewKeyboardButton("/get_history_by_tg"),
 	),
 	tg.NewKeyboardButtonRow(
 		tg.NewKeyboardButton("test"),
@@ -61,16 +61,16 @@ var AdminBtn = tg.NewReplyKeyboard(
 
 var CreatorBtn = tg.NewReplyKeyboard(
 	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButton("/checkip"),
-		tg.NewKeyboardButton("/historycheck"),
+		tg.NewKeyboardButton("/check_ip"),
+		tg.NewKeyboardButton("/history_check"),
 	),
 	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButton("/sendmessage"),
-		tg.NewKeyboardButton("/addnewadmin"),
-		tg.NewKeyboardButton("/deleteadmin"),
+		tg.NewKeyboardButton("/send_message"),
+		tg.NewKeyboardButton("/add_new_admin"),
 	),
 	tg.NewKeyboardButtonRow(
-		tg.NewKeyboardButton("/getlistchecksipuser"),
+		tg.NewKeyboardButton("/delete_admin"),
+		tg.NewKeyboardButton("/get_history_by_tg"),
 	),
 
 	tg.NewKeyboardButtonRow(
