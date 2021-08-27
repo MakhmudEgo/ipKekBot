@@ -26,7 +26,7 @@ type Ips struct {
 }
 
 func Connect() *gorm.DB {
-	configDB := "host=192.168.235.110 " +
+	configDB := "host=192.168.20.44 " +
 		"user=postgres " +
 		"password=lol " +
 		"dbname=postgres " +
@@ -37,7 +37,7 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Panic("no connect")
 	}
-	admin := &users.Users{Id: 234899515, Role: users.CreatorR}
+	admin := &users.Users{Id: 234899515, Role: users.CreatorR, Username: "MakhmudEgo"}
 	if err := db.First(&admin); err.Error != nil {
 		result := db.Create(&admin)
 		if result.Error != nil {
