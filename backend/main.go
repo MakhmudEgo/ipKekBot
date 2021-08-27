@@ -32,7 +32,7 @@ type UserHistory struct {
 
 func main() {
 	var usrs []user
-	dsn := "host=127.0.0.1 user=postgres password=lol dbname=postgres port=5432 sslmode=disable"
+	dsn := "host=bd user=postgres password=lol dbname=postgres port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("backend no connect: " + err.Error())

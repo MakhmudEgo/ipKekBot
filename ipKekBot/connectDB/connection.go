@@ -26,12 +26,7 @@ type Ips struct {
 }
 
 func Connect() *gorm.DB {
-	configDB := "host=127.0.0.1 " +
-		"user=postgres " +
-		"password=lol " +
-		"dbname=postgres " +
-		"port=5432 " +
-		"sslmode=disable"
+	configDB := "host=bd user=postgres password=lol dbname=postgres port=5432 sslmode=disable"
 
 	db, err := gorm.Open(postgres.Open(configDB), &gorm.Config{})
 	if err != nil {
