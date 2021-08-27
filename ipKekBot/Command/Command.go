@@ -31,8 +31,35 @@ func Check(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg.M
 			db.Save(user)
 		}
 		return tg.NewMessage(-1, "")
+	case "/sendmessage":
+		if user.Role == users.UserR {
+			msg = tg.NewMessage(int64(user.Id), "permission denied")
+			msg.ReplyToMessageID = upd.MessageID
+			return msg
+		}
+		msg = sendMessage_(db, upd)
+	case "/addnewadmin":
+		if user.Role == users.UserR {
+			msg = tg.NewMessage(int64(user.Id), "permission denied")
+			msg.ReplyToMessageID = upd.MessageID
+			return msg
+		}
+		msg = tg.NewMessage(upd.Chat.ID, "enter the username")
+		res := db.Find(&users.Users{Id: upd.From.ID}).Update("prev_msg", upd.Text)
+		if res.Error != nil {
+			log.Fatal(res.Error.Error())
+		}
 	default:
 		msg = unknown_(upd)
+	}
+	return msg
+}
+
+func sendMessage_(db *gorm.DB, upd *tg.Message) tg.MessageConfig {
+	msg := tg.NewMessage(upd.Chat.ID, "enter a message")
+	res := db.Find(&users.Users{Id: upd.From.ID}).Update("prev_msg", upd.Text)
+	if res.Error != nil {
+		log.Fatal(res.Error.Error())
 	}
 	return msg
 }

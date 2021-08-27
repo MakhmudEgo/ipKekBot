@@ -51,13 +51,12 @@ func main() {
 			var msg tg.MessageConfig
 			if update.Message.IsCommand() {
 				msg = Command.Check(user, db, update.Message, bot)
-				if msg.ChatID == -1 {
-					continue
-				}
 			} else {
-				msg = Handler.Execute(user, db, update.Message)
+				msg = Handler.Execute(user, db, update.Message, bot)
 			}
-
+			if msg.ChatID == -1 {
+				continue
+			}
 			_, err := bot.Send(msg)
 			if err != nil {
 				log.Println(err.Error())

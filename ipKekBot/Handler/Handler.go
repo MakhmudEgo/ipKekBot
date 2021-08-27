@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func Execute(user *users.Users, db *gorm.DB, upd *tg.Message) tg.MessageConfig {
+func Execute(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg.MessageConfig {
 	var msg tg.MessageConfig
 
 	switch user.PrevMsg {
@@ -21,11 +21,51 @@ func Execute(user *users.Users, db *gorm.DB, upd *tg.Message) tg.MessageConfig {
 		msg = respCheckIp(db, upd)
 		user.PrevMsg = ""
 		db.Save(user)
+	case "/sendmessage":
+		sendmessage(db, upd, bot)
+		user.PrevMsg = ""
+		db.Save(user)
+		return tg.NewMessage(-1, "")
+	case "/addnewadmin":
+		msg = addNewAdmin(db, upd)
+		user.PrevMsg = ""
+		db.Save(user)
 	default:
 		msg = otherMsg(user.Role, upd)
 	}
 	msg.ReplyToMessageID = upd.MessageID
 	return msg
+}
+
+func addNewAdmin(db *gorm.DB, upd *tg.Message) tg.MessageConfig {
+	newAdm := &users.Users{Username: upd.Text}
+	var msg tg.MessageConfig
+	res := db.First(newAdm, "username = ?", upd.Text)
+	if res.Error != nil {
+		msg = tg.NewMessage(int64(upd.From.ID), "Not found "+upd.Text)
+	} else {
+		msg = tg.NewMessage(int64(upd.From.ID), "Added")
+		newAdm.Role = 1
+		db.Save(newAdm)
+	}
+	msg.ReplyToMessageID = upd.MessageID
+	return msg
+}
+
+func sendmessage(db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) {
+	var usrs []users.Users
+	db.Select("id").Find(&usrs)
+	reply := upd.Text
+	for _, usr := range usrs {
+		if usr.Id == upd.From.ID {
+			continue
+		}
+		msg := tg.NewMessage(int64(usr.Id), reply)
+		_, err := bot.Send(msg)
+		if err != nil && err.Error() != "Forbidden: bot was blocked by the user" {
+			log.Fatal(err.Error())
+		}
+	}
 }
 
 func otherMsg(role int, upd *tg.Message) tg.MessageConfig {
