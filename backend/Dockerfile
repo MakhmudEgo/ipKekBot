@@ -5,4 +5,4 @@ COPY ./ ./
 
 RUN go build main.go
 CMD ["./main"]
-EXPOSE 8080 5432
+EXPOSE 8080

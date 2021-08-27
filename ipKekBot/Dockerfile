@@ -4,5 +4,3 @@ WORKDIR /go/src/
 COPY ./ ./
 RUN go build main.go
 CMD ["./main"]
-
-EXPOSE 5432 8080
