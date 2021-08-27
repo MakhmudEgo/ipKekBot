@@ -11,7 +11,7 @@ services:
     env_file:
           - .env
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - ./bd/data:/var/lib/postgresql/data
 #  app:
 #    build: ipKekBot
 #  backend:
