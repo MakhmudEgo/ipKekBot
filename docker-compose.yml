@@ -12,9 +12,9 @@ services:
           - .env
     volumes:
       - ./bd/data:/var/lib/postgresql/data
-#  app:
-#    build: ipKekBot
-#  backend:
-#    build: backend
-#    ports:
-#      - '8080:8080'
+  app:
+    build: ipKekBot
+  backend:
+    build: backend
+    ports:
+      - '8080:8080'
