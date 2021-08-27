@@ -38,8 +38,20 @@ func Check(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg.M
 			return msg
 		}
 		msg = sendMessage_(db, upd)
+		//::TODO duplicate addnewadmin, deleteadmin
 	case "/addnewadmin":
 		if user.Role == users.UserR {
+			msg = tg.NewMessage(int64(user.Id), "permission denied")
+			msg.ReplyToMessageID = upd.MessageID
+			return msg
+		}
+		msg = tg.NewMessage(upd.Chat.ID, "enter the username")
+		res := db.Find(&users.Users{Id: upd.From.ID}).Update("prev_msg", upd.Text)
+		if res.Error != nil {
+			log.Fatal(res.Error.Error())
+		}
+	case "/deleteadmin":
+		if user.Role != users.CreatorR {
 			msg = tg.NewMessage(int64(user.Id), "permission denied")
 			msg.ReplyToMessageID = upd.MessageID
 			return msg

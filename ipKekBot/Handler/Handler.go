@@ -30,8 +30,27 @@ func Execute(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg
 		msg = addNewAdmin(db, upd)
 		user.PrevMsg = ""
 		db.Save(user)
+	case "/deleteadmin":
+		msg = deleteAdmin(db, upd)
+		user.PrevMsg = ""
+		db.Save(user)
 	default:
 		msg = otherMsg(user.Role, upd)
+	}
+	msg.ReplyToMessageID = upd.MessageID
+	return msg
+}
+
+func deleteAdmin(db *gorm.DB, upd *tg.Message) tg.MessageConfig {
+	adm := &users.Users{Username: upd.Text}
+	var msg tg.MessageConfig
+	res := db.First(adm, "username = ?", upd.Text)
+	if res.Error != nil {
+		msg = tg.NewMessage(int64(upd.From.ID), "Not found "+upd.Text)
+	} else {
+		msg = tg.NewMessage(int64(upd.From.ID), "Deleted")
+		adm.Role = 0
+		db.Save(adm)
 	}
 	msg.ReplyToMessageID = upd.MessageID
 	return msg
