@@ -10,16 +10,6 @@ import (
 	"strconv"
 )
 
-//var dbase *gorm.DB
-//
-//func Init() *gorm.DB {
-//	db, err := gorm.Open("postgres", "users=posgres password-admin")
-//}
-//
-//func getDB() *gorm.DB {
-//
-//}
-
 type user struct {
 	ID       int
 	Username string
@@ -68,7 +58,7 @@ func main() {
 	http.HandleFunc("/del_hist", func(w http.ResponseWriter, r *http.Request) {
 		userId, err := strconv.Atoi(r.URL.Query().Get("id"))
 		if err != nil {
-			log.Fatal(err.Error())
+			log.Println(err.Error())
 		}
 		userQuery := r.URL.Query().Get("query")
 		usrHist := UserHistory{Userid: userId, Query: userQuery}
@@ -83,5 +73,5 @@ func main() {
 		fmt.Fprint(w, "success")
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8999", nil))
 }

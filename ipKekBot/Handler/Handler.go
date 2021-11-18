@@ -20,25 +20,15 @@ func Execute(user *users.Users, db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) tg
 	switch user.PrevMsg {
 	case "/check_ip":
 		msg = respCheckIp(db, upd)
-		user.PrevMsg = ""
-		db.Save(user)
 	case "/send_message":
 		sendmessage(db, upd, bot)
-		user.PrevMsg = ""
-		db.Save(user)
 		return tg.NewMessage(-1, "")
 	case "/add_new_admin":
 		msg = addNewAdmin(db, upd)
-		user.PrevMsg = ""
-		db.Save(user)
 	case "/delete_admin":
 		msg = deleteAdmin(db, upd)
-		user.PrevMsg = ""
-		db.Save(user)
 	case "/get_history_by_tg":
 		getListChecksIpUser(db, upd, bot)
-		user.PrevMsg = ""
-		db.Save(user)
 		return tg.NewMessage(-1, "")
 	default:
 		msg = otherMsg(user.Role, upd)
@@ -51,7 +41,7 @@ func getListChecksIpUser(db *gorm.DB, upd *tg.Message, bot *tg.BotAPI) {
 	var data []users.UserHistory
 	id, err := strconv.Atoi(upd.Text)
 	if err != nil {
-		log.Fatal("atoi: " + err.Error())
+		log.Println("atoi: " + err.Error())
 	}
 	user := &users.Users{Id: id}
 

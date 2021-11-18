@@ -1,7 +1,5 @@
 version: '3'
 
-
-
 services:
   bd:
     build: ./bd
@@ -17,4 +15,4 @@ services:
   backend:
     build: backend
     ports:
-      - '8080:8080'
+      - '8080:8999'
